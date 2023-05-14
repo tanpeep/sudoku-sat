@@ -11,10 +11,10 @@ set_cell_var :-
     assert(cell_bool(X, Y, Z, 0)),
     fail.
 
-solve_cnf(CNF) :-
+solve_cnf(CNF, Result) :-
     extract_variables(CNF, Vars),
     Assignment = [],
-    generate_assignment(CNF, Vars, Assignment).
+    generate_assignment(CNF, Vars, Assignment, Result).
 
 not_form(not(X), X).
 not_form(X, X).
@@ -43,15 +43,15 @@ extract_variables(CNF, Vars) :-
     sort(RemovedYes, Vars).
     
 
-generate_assignment(CNF, [], Assignment) :-
-    satisfies_cnf(CNF, Assignment), 
-    write(Assignment).
-generate_assignment(CNF, [Var|Vars], Assignment) :-
+generate_assignment(CNF, [], Assignment, Result) :-
+    satisfies_cnf(CNF, Assignment),
+    append([], Assignment, Result).
+generate_assignment(CNF, [Var|Vars], Assignment, Result) :-
     append([Var], Assignment, Temp1),
-    generate_assignment(CNF, Vars, Temp1).
+    generate_assignment(CNF, Vars, Temp1, Result).
 
-generate_assignment(CNF, [_|Vars], Assignment) :-
-    generate_assignment(CNF, Vars, Assignment).
+generate_assignment(CNF, [_|Vars], Assignment, Result) :-
+    generate_assignment(CNF, Vars, Assignment, Result).
 
 satisfies_cnf([], _).
 satisfies_cnf([Clause|Tail], Assignment) :-
