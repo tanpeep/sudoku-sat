@@ -1,60 +1,28 @@
 :- use_module(library(clpb)).
 :- use_module(library(clpfd)).
-:- dynamic(cell_bool/3).
-:- dynamic(data_cnf/1).
-
-% set every cell with false value on dynamic database
-% set_cell_var :-
-%     A = [1,2,3,4,5,6,7,8,9],
-%     member(X, A),
-%     member(Y, A),
-%     member(Z, A),
-%     assert(cell_bool(X, Y, Z, 0)),
-%     fail.
 
 append2(A1-Z1, Z1-Z2, A1-Z2).
 
 solve_puzzle(Puzzle, Result) :-
     length(Puzzle, N),
-    % generate_data(N),
     extract_clues_to_cnf(Puzzle, 1, CluesCNF ),
-    write("clues = "),
-    write(CluesCNF), nl,
     numlist(1, N, LL),
     generate_least_row_col(LL, LL, LL, LeastCNF, RowCNF, ColumnCNF, Vars),
-    write(Vars), nl,
     generate_most(LL, LL, LL, MostCNF),
     generate_blocks(BlocksCNF),
-    write("generate done"),
     append(CluesCNF, LeastCNF, Tmp),
-    write("append1 done"),
     append(Tmp, RowCNF, Temp),
-    write("append1 done"),
     append(Temp, ColumnCNF, Temp2),
-    write("append1 done"),
     append(Temp2, MostCNF, Temp3),
-    write("append1 done"),
     append(Temp3, BlocksCNF, CNF),
-    write("masuk cnf"),
     solve_cnf(CNF, CluesCNF, Vars, Assignment),
-    write(Assignment),
     sort(Assignment, SortedAssignment),
-    convert_cnf(SortedAssignment, Result),
-    write(Result).
-
-
-% generate_data(N) :-
-%     numlist(1, N, LL),
-%     member(X, LL),
-%     member(Y, LL),
-%     member(Z, LL),
-%     assert(data_cnf(yes([X,Y,Z]))).
+    convert_cnf(SortedAssignment, Result).
 
 generate_least_row_col(_, [], [], [], [], [], []).
 generate_least_row_col(_, [], _, [], [], [], []).
 generate_least_row_col(_, _, [], [], [], [], []).
 generate_least_row_col(LL, [Num1|Tail1],[Num2|Tail2],Least, Row, Col, Vars) :-
-    % findall([Num1, Num2, _], data_cnf(yes([Num1, Num2, _])), Res1),
     generate_least_clause(Num1, Num2, LL, Least1, Row1, Col1, Vars1),
     generate_least_row_col(LL, [Num1], Tail2, Least2, Row2, Col2, Vars2),
     generate_least_row_col(LL, Tail1, [Num2|Tail2], Least3, Row3, Col3, Vars3),
@@ -70,10 +38,10 @@ generate_least_row_col(LL, [Num1|Tail1],[Num2|Tail2],Least, Row, Col, Vars) :-
 generate_least_clause(_, _, [], [], [], [], []).
 generate_least_clause(Num1, Num2, [Num3|Tail], Least, Row, Col, Vars) :-
     generate_least_clause(Num1, Num2, Tail, Least1, Row1, Col1, Vars1),
-    append([yes([Num1, Num2, Num3])], Least1, Least),
-    append([yes([Num1, Num3, Num2])], Row1, Row),
-    append([yes([Num3, Num1, Num2])], Col1, Col),
-    append([[Num1, Num2, Num3]], Vars1, Vars).
+    append([yes([Num1,Num2,Num3])], Least1, Least),
+    append([yes([Num1,Num3,Num2])], Row1, Row),
+    append([yes([Num3,Num1,Num2])], Col1, Col),
+    append([[Num1,Num2,Num3]], Vars1, Vars).
 
 generate_most(_, [], [], []).
 generate_most(_, [], _, []).
@@ -91,12 +59,12 @@ generate_most_clause(_, _, [_], []).
 generate_most_clause(Num1, Num2, [Num3|Tail], Result) :-
     generate_most_clause(Num1, Num2, Tail, Result1),
     generate_most_mini(Num1, Num2, Num3, Tail, Result2),
-    append(Result2, Result1, Result).
+    append(Result2,Result1,Result).
 
 generate_most_mini(_, _, _, [], []).
 generate_most_mini(Num1, Num2, Num3, [Num4|Tail], Result) :-
     generate_most_mini(Num1, Num2, Num3, Tail, Result1),
-    append([[not([Num1, Num2, Num3]), not([Num1, Num2, Num4])]], Result1, Result).
+    append([[not([Num1,Num2,Num3]), not([Num1, Num2, Num4])]], Result1, Result).
 
 generate_blocks(Result) :-
     numlist(1,9,LL),
@@ -120,7 +88,6 @@ generate_blocks(Result) :-
     append(Temp3, Part33, Part3),
     append(Part2, Part3, Temp),
     append(Part1, Temp, Result).
-    % write(Result).
 
 generate_block([], _, _, []).
 generate_block([Num0|Tail], Row,Col, Result ) :-
@@ -133,19 +100,9 @@ generate_block_clauses(_, _, [], []).
 generate_block_clauses(Num, [Row|Tail1], [Col|Tail2], Res) :-
     generate_block_clauses(Num, [Row], Tail2, Res1),
     generate_block_clauses(Num, Tail1, [Col|Tail2], Res2),
-    append([yes([Row, Col, Num])], Res1, Temp),
+    append([yes([Row,Col,Num])], Res1, Temp),
     append(Temp, Res2, Res).
-
-% generate_least([],[]).
-% generate_least(Result, [Num|Tail]) :-
-%     generate_least(Res2, Tail),
-%     numlist(1, N, LL),
-%     generate_least_2(Res1, Num, LL),
-%     append(Res1, Res2, Result).
-
-% generate_least_2()
     
-
 
 extract_clues_to_cnf([], _, []).
 extract_clues_to_cnf([Row|Tail], Counter, Result) :-
@@ -173,7 +130,6 @@ extract_clues([[yes(X)]|Tail], Res) :-
     append([X], Resnext, Res).
 
 solve_cnf(CNF, Clues, Vars, Result) :-
-    % extract_variables(CNF, Vars),
     write("sudah extract"),
     extract_clues(Clues, Cluelist),
     remove_1_literal(CNF, NewCNF, Clues),
