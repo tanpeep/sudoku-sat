@@ -10,8 +10,7 @@ solve_puzzle(Puzzle, Result) :-
     generate_least_row_col(LL, LL, LL, LeastCNF, RowCNF, ColumnCNF, Vars),
     generate_most(LL, LL, LL, MostCNF),
     generate_blocks(BlocksCNF),
-    append(CluesCNF, LeastCNF, Tmp),
-    append(Tmp, RowCNF, Temp),
+    append(LeastCNF, RowCNF, Temp),
     append(Temp, ColumnCNF, Temp2),
     append(Temp2, MostCNF, Temp3),
     append(Temp3, BlocksCNF, CNF),
@@ -130,20 +129,25 @@ extract_clues([[yes(X)]|Tail], Res) :-
     append([X], Resnext, Res).
 
 solve_cnf(CNF, Clues, Vars, Result) :-
-    write("sudah extract"),
     extract_clues(Clues, Cluelist),
+    subtract(Vars, Cluelist, RemovedVars),
     remove_1_literal(CNF, NewCNF, Clues),
     append([], Cluelist, Assignment),
-    generate_assignment(CNF, Vars, Assignment, Result).
+    generate_assignment(NewCNF, RemovedVars, Assignment, Result).
 
-remove_1_literal(Clauses, Clauses, []).
-
+remove_1_literal(_, [], []).
 remove_1_literal(Clauses, NewCNF, [[Clue]|Tail]) :-
     remove_1_literal(Clauses, NextCNF, Tail),
+    check_literal(Clauses, ThisCNF, Clue),
+    append(ThisCNF, NextCNF, NewCNF).
+
+check_literal([], [], _).
+check_literal([Clause|Rest], NewCNF, Clue) :-
+    check_literal(Rest, NextCNF, Clue),
     (
-        member(Clue, Clauses),
+        member(Clue, Clause),
         append([], NextCNF, NewCNF) ;
-        append(Clauses, NextCNF, NewCNF)).
+        append(Clause, NextCNF, NewCNF)).
 
 not_form(not(X), X).
 not_form(X, X).
@@ -172,11 +176,12 @@ extract_variables(CNF, Vars) :-
     sort(RemovedYes, Vars).
     
 
-generate_assignment(CNF, _, Assignment, Result) :-
+generate_assignment(CNF, [], Assignment, Result) :-
     satisfies_cnf(CNF, Assignment), !,
     append([], Assignment, Result).
-generate_assignment(CNF, [Var|Vars], Assignment, Result) :-
-    append([Var], Assignment, Temp1),
+generate_assignment(CNF, [[X,Y,Z]|Vars], Assignment, Result) :-
+    \+ member([X,Y,_], Assignment),
+    append([[X,Y,Z]], Assignment, Temp1),
     generate_assignment(CNF, Vars, Temp1, Result).
 
 generate_assignment(CNF, [_|Vars], Assignment, Result) :-
